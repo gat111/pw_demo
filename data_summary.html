@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>データ集計一覧</title>
+    <style>
+      /* ベーススタイル */
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 30px auto;
+        background-color: #fff;
+        padding: 20px 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #333;
+      }
+      /* 検索エリア */
+      .search-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .search-field {
+        display: flex;
+        align-items: center;
+      }
+      .search-field label {
+        margin-right: 8px;
+        font-weight: bold;
+        color: #555;
+      }
+      .search-field input {
+        padding: 8px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      /* テーブルスタイル */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      thead {
+        background-color: #007bff;
+        color: #fff;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        border: 1px solid #e0e0e0;
+        text-align: left;
+      }
+      tbody tr:hover {
+        background-color: #f1f1f1;
+      }
+      /* ボタンスタイル */
+      .button-container {
+        text-align: center;
+      }
+      .button-container button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        margin: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      .button-container button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>データ集計一覧</h1>
+      <!-- 検索エリア -->
+      <div class="search-container">
+        <div class="search-field">
+          <label for="deptSearch">部門名:</label>
+          <input type="text" id="deptSearch" placeholder="部門名で検索" onkeyup="filterTable()" />
+        </div>
+        <div class="search-field">
+          <label for="revenueMin">収益最小:</label>
+          <input type="number" id="revenueMin" placeholder="例: 500000" onkeyup="filterTable()" />
+        </div>
+        <div class="search-field">
+          <label for="revenueMax">収益最大:</label>
+          <input type="number" id="revenueMax" placeholder="例: 1500000" onkeyup="filterTable()" />
+        </div>
+        <div class="search-field">
+          <label for="dateStart">開始日:</label>
+          <input type="date" id="dateStart" onchange="filterTable()" />
+        </div>
+        <div class="search-field">
+          <label for="dateEnd">終了日:</label>
+          <input type="date" id="dateEnd" onchange="filterTable()" />
+        </div>
+      </div>
+      <!-- テーブル -->
+      <table id="summaryTable">
+        <thead>
+          <tr>
+            <th>部門名</th>
+            <th>期間</th>
+            <th>収益</th>
+            <th>費用</th>
+            <th>利益</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- ここに動的にデータが生成されます -->
+        </tbody>
+      </table>
+      <!-- ボタン群 -->
+      <div class="button-container">
+        <button onclick="downloadCSV()">CSVダウンロード</button>
+        <button onclick="downloadData('excel')">Excelダウンロード</button>
+        <button onclick="downloadData('pdf')">PDFダウンロード</button>
+        <button onclick="goBack()">戻る</button>
+      </div>
+    </div>
+    <script>
+      // 部門リスト
+      const departments = [
+        "人事部",
+        "経理部",
+        "マーケティング部",
+        "企画部",
+        "商品開発部",
+        "生産部",
+        "品質管理部",
+        "物流部",
+        "IT部",
+        "法務部",
+      ];
+      const tbody = document.querySelector("#summaryTable tbody");
+      const year = 2025;
+
+      // 各部門に対して、第１事業部～第１０事業部を生成（全計100件）
+      departments.forEach((dept, deptIndex) => {
+        for (let j = 1; j <= 10; j++) {
+          // 部門名に事業部を付与
+          const fullDeptName = `${dept} 第${j}事業部`;
+          // ここでは、事業部番号を月と見立て、期間を設定（例：第1事業部 → 1月）
+          const month = j;
+          const paddedMonth = String(month).padStart(2, "0");
+          const startDate = `${year}-${paddedMonth}-01`;
+          const lastDay = new Date(year, month, 0).getDate();
+          const endDate = `${year}-${paddedMonth}-${String(lastDay).padStart(2, "0")}`;
+          const period = `${startDate} - ${endDate}`;
+          // 収益は任意の計算式で算出
+          const revenue = 1000000 + deptIndex * 100000 + j * 50000;
+          const cost = Math.floor(revenue * 0.5);
+          const profit = revenue - cost;
+          // テーブル行を生成
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${fullDeptName}</td>
+            <td>${period}</td>
+            <td>${revenue}</td>
+            <td>${cost}</td>
+            <td>${profit}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      });
+
+      // フィルタリング処理
+      function filterTable() {
+        const deptInput = document.getElementById("deptSearch").value.toUpperCase();
+        const revenueMin = document.getElementById("revenueMin").value;
+        const revenueMax = document.getElementById("revenueMax").value;
+        const dateStart = document.getElementById("dateStart").value;
+        const dateEnd = document.getElementById("dateEnd").value;
+        const table = document.getElementById("summaryTable");
+        const rows = table.getElementsByTagName("tr");
+
+        // ヘッダー行は除外してループ
+        for (let i = 1; i < rows.length; i++) {
+          const cells = rows[i].getElementsByTagName("td");
+          const deptName = cells[0].textContent.toUpperCase();
+          const periodText = cells[1].textContent;
+          const revenue = parseInt(cells[2].textContent, 10);
+          // 期間は「YYYY-MM-DD - YYYY-MM-DD」の形式。先頭の日付で判定
+          const periodStart = periodText.split(" - ")[0];
+
+          let show = true;
+          // 部門名フィルタ
+          if (deptInput && deptName.indexOf(deptInput) === -1) {
+            show = false;
+          }
+          // 収益の最小・最大フィルタ
+          if (revenueMin && revenue < parseInt(revenueMin, 10)) {
+            show = false;
+          }
+          if (revenueMax && revenue > parseInt(revenueMax, 10)) {
+            show = false;
+          }
+          // 日付範囲フィルタ（開始日で判定）
+          if (dateStart && periodStart < dateStart) {
+            show = false;
+          }
+          if (dateEnd && periodStart > dateEnd) {
+            show = false;
+          }
+          rows[i].style.display = show ? "" : "none";
+        }
+      }
+
+      // ダウンロード・戻るボタンのダミー処理
+      function downloadData(format) {
+        alert(format + " ダウンロード機能は実装されていません。");
+      }
+      function goBack() {
+        window.location.href = 'menu.html';
+      }
+
+      function downloadCSV() {
+        const rows = document.querySelectorAll("#summaryTable tr");
+        let csvContent = "data:text/csv;charset=utf-8,";
+
+        rows.forEach((row) => {
+          const cols = row.querySelectorAll("td, th");
+          const rowData = Array.from(cols)
+            .map((col) => col.textContent)
+            .join(",");
+          csvContent += rowData + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "data_summary.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    </script>
+  </body>
+</html>
